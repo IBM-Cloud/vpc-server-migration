@@ -157,7 +157,7 @@ generatessh(){
 				printf "\n Please make sure, ssh public key content updated in $sshfilepath (for windows - Please copy the ssh key content and update in your windows ssh folder either authorized_keys or administrators_authorized_keys ) file"
 			fi
 		else
-			failed "\n Please enter valid option"
+			failed "\n Code: MGNCLIUX08 - Please enter valid option"
 			exit 1
 		fi
 	else
@@ -182,7 +182,7 @@ sshcopyconfirm(){
 	if [[ "$sshconfirm" == "y" ]];then
 		sshconcheck
 	else
-		failed "Please copy the SSH key file and re-run the script"
+		failed "Code: MGNCLIUX09 - Please copy the SSH key file and re-run the script"
 		exit 1
 	fi
 }
@@ -196,7 +196,7 @@ sshconcheck(){
    		success "SSH Connection to $srcip over port $sshport is possible"
 		sshconcheckstatus="success"
 	else
-   		error "SSH connection to $srcip over port $sshport is not possible"
+   		error "Code: MGNCLI0001 - SSH connection to $srcip over port $sshport is not possible"
 		loginfo "Please make sure you have added ssh key in $sshfilepath (for windows - windows ssh folder either authorized_keys or administrators_authorized_keys)file"
 		question "Do you want re-check SSH key?"
 		read sshrecheckres
@@ -204,7 +204,7 @@ sshconcheck(){
 			sshconcheckstatus="re-check"
 			generatessh
 		else
-			failed "Couldn't proceed further without proper SSH connection, Migration is Failed"
+			failed "Code: MGNCLIUX10 -Couldn't proceed further without proper SSH connection, Migration is Failed"
 			sshconcheckstatus="failed"
 			exit 1
 		fi
@@ -285,7 +285,7 @@ copyexecprechecklinux(){
 			if ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i $dirpath/migration.key $ROOT_USERNAME@$srcip "test -e /tmp/$precheckreport"; then
 				ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i $dirpath/migration.key $ROOT_USERNAME@$srcip sudo rm -rf /tmp/$precheckreport
 				if ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i $dirpath/migration.key $ROOT_USERNAME@$srcip "test -e /tmp/$precheckreport"; then
-					error "Not able to delete previous precheck report file"
+					error "Code: MGNCLI0002 - : Not able to delete previous precheck report file"
 				else
 					success "Previous precheck report file is deleted "
 				fi
@@ -313,7 +313,7 @@ validateprecheckresultlinux(){
 		if [[ "$OS_VERSION" == "$osversion" ]];then
 			:
 		else
-    		failed "Selected OS($OS_NAME) version($OS_VERSION) and source machine OS($osname) version($osversion) is different"
+    		failed " Code: MGNCLIUX11 - Selected OS($OS_NAME) version($OS_VERSION) and source machine OS($osname) version($osversion) is different"
 		fi
 	else
 		failed "Selected OS($OS_NAME) and source machine OS($osname) is different"
@@ -326,11 +326,11 @@ validateprecheckresultlinux(){
                 precheck="passed"
             else
                 precheck="failed"
-                failed "$prechk is failed, please fix"
+                failed "Code: MGNCLIUX12 - $prechk is failed, please fix"
             fi
         else
             precheck="failed"
-            failed "$prechk is failed, please fix"
+            failed "Code: MGNCLIUX12 - $prechk is failed, please fix"
         fi
     done < "$dirpath$srcip/failedchecks"
 	if [[ -f "$dirpath$srcip/failedchecks" ]]; then
@@ -348,7 +348,7 @@ validateprecheckresultlinux(){
 		else
 			sed -i '/prerequisitestatus/d' $dirpath$srcip/$tempvarfile
 			echo "prerequisitestatus=failed" >> $dirpath$srcip/$tempvarfile
-			failed "Pre-requisites for migration"
+			failed "Code: MGNCLIUX12 - Pre-requisites for migration"
 		fi
 	else
 		passed "Pre-requisites for migration"
@@ -371,7 +371,7 @@ windowsprecheckcopyvalidate(){
 		else
 			sed -i '/prerequisitestatus/d' $dirpath$srcip/win_precheckreport
 			echo "prerequisitestatus=failed" >> $dirpath$srcip/win_precheckreport
-			failed "Pre-requisites for migration"
+			failed "Code: MGNCLIUX12 - Pre-requisites for migration"
 		fi
 	else
 		passed "Pre-requisites for migration"
@@ -400,7 +400,7 @@ validregion(){
     if grep -E "^$REGION$" $dirpath$srcip/regionvalidfile >/dev/null 2>&1 ;then
         passed "Region is valid"
     else
-        failed "Not a valid region($REGION)"
+        failed "Code: MGNCLIUX13 - Not a valid region($REGION)"
         exit 1
     fi
 }
@@ -412,11 +412,11 @@ validatecosbucket(){
 		if ibmcloud cos objects --bucket "$BUCKET" >/dev/null 2>&1 ;then
         	passed "Entered COS bucket($BUCKET) is used for uploading image"
     	else
-           	failed "Not able to find COS object details, Please check permission"
+           	failed "Code: MGNCLIUX14 - Not able to find COS object details, Please check permission"
 			exit 1
     	fi
 	else
-		failed "Please enter COS bucket from $REGION, configured COS bucket($BUCKET) is in different region($userbucketregion)"
+		failed "Code: MGNCLIUX14 - Please enter COS bucket from $REGION, configured COS bucket($BUCKET) is in different region($userbucketregion)"
 		exit 1
 	fi
 }
@@ -426,18 +426,18 @@ validatecustomimagename(){
 	if ibmcloud is images >/dev/null 2>&1 ;then
 		:
 	else
-		error "Not able to find custom image details from IBM Cloud, Please check permission"
+		error "Code: MGNCLI0003 - Not able to find custom image details from IBM Cloud, Please check permission"
 	fi
 	imageexist=`ibmcloud is images | awk -v image=$CUSTOM_IMAGE_NAME '$2 == image {print $1}'`
 	
 	if [[ -z $imageexist && $CUSTOM_IMAGE_NAME != *['!'@#\$%^\&*()_+]* ]] ;then
 			passed "Custom image name is valid"
 	else
-		failed "Custom image already exists with same name or contains special characters, Please enter different name"
+		failed "Code: MGNCLIUX15 - Custom image already exists with same name or contains special characters, Please enter different name"
 		exit 1
 	fi
 	if ibmcloud cos object-head --bucket $BUCKET --key $cosobjectname > /dev/null 2>&1;then
-		failed "Image Template already exists with same name in COS bucket, Please re-try with different name"
+		failed "Code: MGNCLIUX15 - Image Template already exists with same name in COS bucket, Please re-try with different name"
 		exit 1
 	fi
 
@@ -448,7 +448,7 @@ validatevsiname(){
     if [[ -z $vsiexist && $VSI_NAME != *['!'@#\$%^\&*()_+]* ]] ;then
 		passed "VSI name is valid"
     else
-        failed "VPC VSI already exists with same name or contains special characters, Please re-try different name"
+        failed "Code: MGNCLIUX16 - VPC VSI already exists with same name or contains special characters, Please re-try different name"
         exit 1
     fi
 }
@@ -460,7 +460,7 @@ validateinstanceprofile(){
 	if grep -E "^$INSTANCE_PROFILE_NAME$" $dirpath$srcip/instanceprofilevalidfile >/dev/null 2>&1 ;then 
 		passed "Instance profile is valid"
 	else
-		failed "Not a valid instance profile for $REGION region"
+		failed "Code: MGNCLIUX17 - Not a valid instance profile for $REGION region"
 		exit 1
 	fi
 }
@@ -475,7 +475,7 @@ validatevsisshkey(){
 		echo "sshkeyid=$sshkeyid" >> $dirpath$srcip/$tempvarfile
 		passed "ssh key is valid"
 	else
-		failed "Not a valid ssh key for $REGION region"
+		failed "Code: MGNCLIUX18 - Not a valid ssh key for $REGION region"
 		exit 1
 	fi
 }
@@ -492,7 +492,7 @@ validateresourcegroup(){
 		echo "resourcegroupid=$resourcegroupid" >> $dirpath$srcip/$tempvarfile
 		passed "Resource is valid"
     else
-        failed "Not a valid Resource Group"
+        failed "Code: MGNCLIUX19 - Not a valid Resource Group"
 		exit 1
     fi
 }
@@ -507,7 +507,7 @@ validatevpc(){
 		echo "vpcid=$vpcid" >> $dirpath$srcip/$tempvarfile
 		passed "VPC is valid"
     else
-        failed "Not a valid VPC"
+        failed "Code: MGNCLIUX20 - Not a valid VPC"
 		exit 1
     fi
 }
@@ -526,7 +526,7 @@ validatesubnet(){
 				:
 			fi
 		else
-			error "Not able find subnet region zone, Please check permission"
+			error "Code: MGNCLI0004 - Not able find subnet region zone, Please check permission"
 			exit 1
 		fi
 		regionzone="$REGION-$regionzone" 
@@ -535,7 +535,7 @@ validatesubnet(){
 			echo "regionzone=$regionzone" >> $dirpath$srcip/$tempvarfile
 			passed "Subnet is valid"
 		else
-			error "Configred region($regionzone) and Subnet region($subnetregion) not same, Please check configuration file"
+			error "Code: MGNCLI0005 - Configred region($regionzone) and Subnet region($subnetregion) not same, Please check configuration file"
 			failed "Not a valid subnet for $VPC_NAME VPC"
 			exit 1
 		fi
@@ -708,12 +708,12 @@ classicimageexport(){
 					fi
 				done
 			else
-				failed "Image Template is uploading to COS bucket"
+				failed "Code: MGNCLIUX21 - Image Template is uploading to COS bucket"
 				exit 1
 			fi
 			source $dirpath$srcip/$tempvarfile
 		else
-			failed "Exporting classic VSI into Image Template is failed"
+			failed "ode: MGNCLIUX21 - Exporting classic VSI into Image Template is failed"
 		fi
 	fi
 }
@@ -723,7 +723,7 @@ checkimagefileexistance(){
     count=`ls -1 $dirpath$srcip/*.$imgext 2>/dev/null | wc -l`
     if [[ $count == 1 ]];then
 		if [[ "$imgext" == "vmdk" ]];then
-			failed "Required both raw file (eg: vmdisk-flat.vmdk) and descriptor file (eg: vmdisk.vmdk), Please upload both vmdk file"
+			failed "Code: MGNCLIUX22 - Required both raw file (eg: vmdisk-flat.vmdk) and descriptor file (eg: vmdisk.vmdk), Please upload both vmdk file"
 			sed -i '/osdiskimage/d' $dirpath$srcip/$tempvarfile
 			echo "osdiskimage=absent" >> $dirpath$srcip/$tempvarfile
 			exit 1
@@ -764,19 +764,19 @@ checkimagefileexistance(){
 					echo "osdiskimage=present" >> $dirpath$srcip/$tempvarfile
 					
 				else
-					failed "vmdk descriptor file is not found"
+					failed "Code: MGNCLIUX22 - vmdk descriptor file is not found"
 				fi
 			else
-				failed "vmdk raw file is not found"
+				failed "Code: MGNCLIUX22 - vmdk raw file is not found"
 			fi
 		else
-			failed "More number of $imgext files present, Please keep only OS disk"
+			failed "Code: MGNCLIUX22 - More number of $imgext files present, Please keep only OS disk"
 			sed -i '/osdiskimage/d' $dirpath$srcip/$tempvarfile
 			echo "osdiskimage=absent" >> $dirpath$srcip/$tempvarfile
         	exit 1	
 		fi
     elif [[ $count -gt 2 ]];then
-        failed "More number of $imgext files present, Please keep only OS disk"
+        failed "Code: MGNCLIUX22 - More number of $imgext files present, Please keep only OS disk"
 		sed -i '/osdiskimage/d' $dirpath$srcip/$tempvarfile
 		echo "osdiskimage=absent" >> $dirpath$srcip/$tempvarfile
         exit 1
