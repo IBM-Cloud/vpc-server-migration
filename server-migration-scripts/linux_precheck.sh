@@ -3,7 +3,6 @@
 PATH=/usr/bin:/bin:/usr/sbin:/sbin
 #----------------------------------------------------------------------------------------------------------------------
 # Script Name :  linux_precheck.sh     
-# Prepared By : Vikash.Kumar.Shrivastva@ibm.com
 # Create Date : 02 Nov 2020
 # Version: 1.0
 # This is a pre-check script to ensure the system meets the minimum requirement for VPC.  This script will check the OS and minimum supported version,
@@ -11,7 +10,7 @@ PATH=/usr/bin:/bin:/usr/sbin:/sbin
 # If it will not locate the cloud init it will install or will update the missing configuration.
 #
 # Script Name : Pre_check_and_configuring.sh
-# Modified and added new features By : Robert.Ebenezer.Bhakiyaraj.S@ibm.com
+# Modified and added new features By : Robert.Ebenezer.Bhakiyaraj.S@ibm.com & Sateesh.velamuri@ibm.com
 # Create Date : 30 Mar 2021
 # Version: 2.0
 # This script will check all pre-requisites for linux operating systems.
