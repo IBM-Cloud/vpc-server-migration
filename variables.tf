@@ -1,4 +1,4 @@
-vvariable "image" {
+variable "image" {
   description = "Enter Ubuntu 20.04 imageID to create appliance VSI"
   type        = string
 }
