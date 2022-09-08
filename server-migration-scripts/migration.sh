@@ -2,9 +2,9 @@
 
 #-------------------------------------------------------------------------------------------------------------------------
 # Script Name :  migration.sh     
-# Prepared By : robert.ebenezer.bhakiyaraj.s@ibm.com
-# Create Date : 19 Feb 2021
-# Version: 1.0
+# Prepared By : robert.ebenezer.bhakiyaraj.s@ibm.com & sateesh.velamuri@ibm.com
+# Create Date : 08 Sep 2022
+# Version: 2.0
 # This script will  convert images /vmdk/vhd to qcow2, upload to COS bucker, Create custom Image and create vsi with custom image
 #--------------------------------------------------------------------------------------------------------------------------
 ### Variable Declaration & Assignment
@@ -138,7 +138,7 @@ convert_to_qcow2 () {
 		echo "imageconversion=completed" >> $MIGRATEPATH/$tempvarfile	
         passed "Image conversion is successful"
     else
-        failed "Image conversion is failed"
+        failed "Code: MGNCLIUX23 - Image conversion is failed"
 		sed -i '/imageconversion/d' $MIGRATEPATH/$tempvarfile
 		echo "imageconversion=failed" >> $MIGRATEPATH/$tempvarfile	
         exit 1
@@ -165,7 +165,7 @@ convert_image () {
 	elif [[ "$srcformat" == "vmdk" ]];then
        		format="vmdk"
 	else
-    	 	failed "Not supported format"
+    	 	failed "Code: MGNCLIUX23 - Not supported format"
 	fi
 	if [[ -f $MIGRATEPATH/$destinationfilename ]] ;then
 		question "File exist with same name as output file and do you want to replace(Default n )"
@@ -270,7 +270,7 @@ cos_upload (){
 	if [[ -z $uploadid ]];then
 		pkill -9 -f ibmcloudloginstatus.sh
 		rm -rf $MIGRATEPATH/ibmcloudloginstatus.sh
-		error "Creating multipart upload is not successful, please try again..."
+		error "Code: MGNCLI0006 - Creating multipart upload is not successful, please try again..."
 		exit 1
 	else
     	loginfo "Upload ID is : $uploadid"
@@ -386,7 +386,7 @@ create_custom_image (){
     else
 		sed -i '/customimagecreation/d' $MIGRATEPATH/$tempvarfile
 		echo "customimagecreation=failed" >> $MIGRATEPATH/$tempvarfile
-        failed "Create Custom image is failed"
+        failed "Code: MGNCLIUX24 - Create Custom image is failed"
     fi 
 }
 # The following function will create custom image with uploaded qcow2 file.
@@ -500,7 +500,7 @@ check_vsi (){
 	else
 		sed -i '/vsicreation/d' $MIGRATEPATH/$tempvarfile
 		echo "vsicreation=failed" >> $MIGRATEPATH/$tempvarfile
-    	failed "Creating VSI is failed"
+    	failed "Code: MGNCLIUX25 - Creating VSI is failed"
 	fi
 }
 # The following function will create gen2 vsi with custom image.
@@ -561,7 +561,7 @@ create_vsi () {
 			check_vsi
 		elif [[ -z "$vsiid" ]]; then
 			rm -rf $vsidetailstmp
-			error "An error occured"
+			error "Code: MGNCLI0007 - An error occured"
 			create_vsi
     	else
 			
