@@ -2,9 +2,10 @@
 
 #-------------------------------------------------------------------------------------------------------------------------
 # Script Name :  migration.sh     
-# Prepared By : robert.ebenezer.bhakiyaraj.s@ibm.com & sateesh.velamuri@ibm.com
+# Prepared By : robert.ebenezer.bhakiyaraj.s@ibm.com 
+# Modified By : Sateesh.Velamuri@ibm.com
 # Create Date : 08 Sep 2022
-# Version: 2.0
+# Version: 1.0
 # This script will  convert images /vmdk/vhd to qcow2, upload to COS bucker, Create custom Image and create vsi with custom image
 #--------------------------------------------------------------------------------------------------------------------------
 ### Variable Declaration & Assignment
