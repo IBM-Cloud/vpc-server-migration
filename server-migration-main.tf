@@ -65,7 +65,7 @@ resource "ibm_is_instance" "vsi" {
   zone           = var.zone
   keys           = [data.ibm_is_ssh_key.ssh_key_id.id]
   resource_group = data.ibm_resource_group.rg.id
-  image          = ibm_is_image.custom_image.id
+  image          = var.image
   profile        = var.profile
 
   user_data = file("download_script.sh")
