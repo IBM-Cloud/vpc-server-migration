@@ -158,7 +158,6 @@ generatessh(){
 			fi
 		else
 			failed "\n Code: MGNCLIUX08 - Please enter valid option"
-			exit 1
 		fi
 	else
 		ssh-keygen -t rsa -N "" -f $dirpath/migration.key
@@ -182,21 +181,21 @@ sshcopyconfirm(){
 	if [[ "$sshconfirm" == "y" ]];then
 		sshconcheck
 	else
-		failed "Code: MGNCLIUX09 - Please copy the SSH key file and re-run the script"
+		failed "Code: MGNCLIUX09 - Please copy the SSH key and re-run the script"
 		exit 1
 	fi
 }
 #This Function will check ssh connection
 sshconcheck(){
 	source $dirpath$srcip/$tempvarfile	
-	loginfo "We are testing ssh connection using ssh key"
+	loginfo "Testing ssh connection using ssh key"
 	connect_timeout=2
 	ssh -q -o BatchMode=yes  -o StrictHostKeyChecking=no -o ConnectTimeout=$connect_timeout -i $dirpath/migration.key $ROOT_USERNAME@$srcip 'exit 0'
 	if [ $? == 0 ];then
-   		success "SSH Connection to $srcip over port $sshport is possible"
+   		success "SSH Connection to $srcip over port $sshport is established"
 		sshconcheckstatus="success"
 	else
-   		error "Code: MGNCLI0001 - SSH connection to $srcip over port $sshport is not possible"
+   		error "Code: MGNCLI0001 - Could not establish SSH connection to $srcip over port $sshport"
 		loginfo "Please make sure you have added ssh key in $sshfilepath (for windows - windows ssh folder either authorized_keys or administrators_authorized_keys)file"
 		question "Do you want re-check SSH key?"
 		read sshrecheckres
@@ -204,7 +203,7 @@ sshconcheck(){
 			sshconcheckstatus="re-check"
 			generatessh
 		else
-			failed "Code: MGNCLIUX10 -Couldn't proceed further without proper SSH connection, Migration is Failed"
+			failed "Code: MGNCLIUX10 - Couldn't proceed further without proper SSH connection, Cannot continue with migration"
 			sshconcheckstatus="failed"
 			exit 1
 		fi
@@ -243,7 +242,7 @@ getcheckvalidconfig(){
 #This Function will validate precheck result for linux
 resultexecprechecklinux(){
 	result=false
-	loginfo "Checking pre-requisites for migration on source machine is in progress..."
+	loginfo "Checking pre-requisites for migration on source machine..."
 	rm -rf $precheckreport
 	sleep 40
 	while [[ "$result" == false ]]
@@ -253,7 +252,7 @@ resultexecprechecklinux(){
 			source $dirpath$srcip/$precheckreport
 			ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i $dirpath/migration.key $ROOT_USERNAME@$srcip "cat /tmp/$precheckreport"
 			if [[ "$prerequisitescheck" == "completed" ]];then
-				success "Pre-requisites report is generated"
+				success "Pre-requisites report is generated successfully"
 				ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i $dirpath/migration.key $ROOT_USERNAME@$srcip "cat /tmp/$precheckreport"
 				scp -o BatchMode=yes -o StrictHostKeyChecking=no -i $dirpath/migration.key  $ROOT_USERNAME@$srcip:/tmp/pc.err $dirpath$srcip/pc.out
 				scp -o BatchMode=yes -o StrictHostKeyChecking=no -i $dirpath/migration.key  $ROOT_USERNAME@$srcip:/tmp/pc.err $dirpath$srcip/pc.err
@@ -285,9 +284,9 @@ copyexecprechecklinux(){
 			if ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i $dirpath/migration.key $ROOT_USERNAME@$srcip "test -e /tmp/$precheckreport"; then
 				ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i $dirpath/migration.key $ROOT_USERNAME@$srcip sudo rm -rf /tmp/$precheckreport
 				if ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i $dirpath/migration.key $ROOT_USERNAME@$srcip "test -e /tmp/$precheckreport"; then
-					error "Code: MGNCLI0002 - : Not able to delete previous precheck report file"
+					error "Code: MGNCLI0002 - : could not delete previous precheck report file"
 				else
-					success "Previous precheck report file is deleted "
+					success "Previous precheck report file is deleted successfully"
 				fi
 			fi
 			ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i $dirpath/migration.key $ROOT_USERNAME@$srcip sudo chmod 777 /tmp/$linuxprecheck
@@ -367,7 +366,7 @@ windowsprecheckcopyvalidate(){
 	if [[ -f "$dirpath$srcip/failedchecks" ]]; then
 		if ! [[ -s "$dirpath$srcip/failedchecks" ]]; then
 			passed "Pre-requisites for migration"
-			loginfo "Please do network reset and sysprep needs to be performed then re-run the appliance script again to proceed migration further"
+			loginfo "Please do SysPrep. Then re-run the appliance script to proceed further with migration"
 		else
 			sed -i '/prerequisitestatus/d' $dirpath$srcip/win_precheckreport
 			echo "prerequisitestatus=failed" >> $dirpath$srcip/win_precheckreport
@@ -412,7 +411,7 @@ validatecosbucket(){
 		if ibmcloud cos objects --bucket "$BUCKET" >/dev/null 2>&1 ;then
         	passed "Entered COS bucket($BUCKET) is used for uploading image"
     	else
-           	failed "Code: MGNCLIUX14 - Not able to find COS object details, Please check permission"
+           	failed "Code: MGNCLIUX14 - Not able to find COS object details"
 			exit 1
     	fi
 	else
@@ -426,18 +425,18 @@ validatecustomimagename(){
 	if ibmcloud is images >/dev/null 2>&1 ;then
 		:
 	else
-		error "Code: MGNCLI0003 - Not able to find custom image details from IBM Cloud, Please check permission"
+		error "Code: MGNCLI0003 - Not able to find custom image details from IBM Cloud, Please ensure the user has access to Custom Image"
 	fi
 	imageexist=`ibmcloud is images | awk -v image=$CUSTOM_IMAGE_NAME '$2 == image {print $1}'`
 	
 	if [[ -z $imageexist && $CUSTOM_IMAGE_NAME != *['!'@#\$%^\&*()_+]* ]] ;then
 			passed "Custom image name is valid"
 	else
-		failed "Code: MGNCLIUX15 - Custom image already exists with same name or contains special characters, Please enter different name"
+		failed "Code: MGNCLIUX15 - Custom image already exists with same name or contains special characters, Please use different name"
 		exit 1
 	fi
 	if ibmcloud cos object-head --bucket $BUCKET --key $cosobjectname > /dev/null 2>&1;then
-		failed "Code: MGNCLIUX15 - Image Template already exists with same name in COS bucket, Please re-try with different name"
+		failed "Code: MGNCLIUX15 - Image Template already exists with same name in COS bucket, Please use different name"
 		exit 1
 	fi
 
@@ -448,7 +447,7 @@ validatevsiname(){
     if [[ -z $vsiexist && $VSI_NAME != *['!'@#\$%^\&*()_+]* ]] ;then
 		passed "VSI name is valid"
     else
-        failed "Code: MGNCLIUX16 - VPC VSI already exists with same name or contains special characters, Please re-try different name"
+        failed "Code: MGNCLIUX16 - VPC VSI already exists with same name or contains special characters, Please use different name"
         exit 1
     fi
 }
@@ -475,7 +474,7 @@ validatevsisshkey(){
 		echo "sshkeyid=$sshkeyid" >> $dirpath$srcip/$tempvarfile
 		passed "ssh key is valid"
 	else
-		failed "Code: MGNCLIUX18 - Not a valid ssh key for $REGION region"
+		failed "Code: MGNCLIUX18 - Not a valid ssh key name in this region ($REGION)"
 		exit 1
 	fi
 }
@@ -492,7 +491,7 @@ validateresourcegroup(){
 		echo "resourcegroupid=$resourcegroupid" >> $dirpath$srcip/$tempvarfile
 		passed "Resource is valid"
     else
-        failed "Code: MGNCLIUX19 - Not a valid Resource Group"
+        failed "Code: MGNCLIUX19 - Invalid Resource Group"
 		exit 1
     fi
 }
@@ -507,7 +506,7 @@ validatevpc(){
 		echo "vpcid=$vpcid" >> $dirpath$srcip/$tempvarfile
 		passed "VPC is valid"
     else
-        failed "Code: MGNCLIUX20 - Not a valid VPC"
+        failed "Code: MGNCLIUX20 - Invalid VPC name"
 		exit 1
     fi
 }
@@ -526,7 +525,7 @@ validatesubnet(){
 				:
 			fi
 		else
-			error "Code: MGNCLI0004 - Not able find subnet region zone, Please check permission"
+			error "Code: MGNCLI0004 - Not able find subnet in the region zone provided"
 			exit 1
 		fi
 		regionzone="$REGION-$regionzone" 
@@ -536,7 +535,7 @@ validatesubnet(){
 			passed "Subnet is valid"
 		else
 			error "Code: MGNCLI0005 - Configred region($regionzone) and Subnet region($subnetregion) not same, Please check configuration file"
-			failed "Not a valid subnet for $VPC_NAME VPC"
+			failed "Invalid subnet for $VPC_NAME VPC"
 			exit 1
 		fi
 	fi
@@ -550,18 +549,18 @@ networkCommChk(){
         if [[ `cat $dirpath$srcip/$comres | grep "$sshport" | grep "open"` ]];then
             networkstatus="success"
 			loginfo "Port $sshport is open"
-			loginfo "Network Communication check is successful"
+			loginfo "Network communication check is successful"
         else
 			networkstatus="portnotopen"
-            loginfo "Port $sshport is not open"
-		    loginfo "Please install ssh and open port $sshport"
+            error "Port $sshport is not open"
+		    error "Please install ssh and open port $sshport"
 			rm -rf $dirpath$srcip/$comre
 	    	exit 1
         fi
         rm -rf $dirpath$srcip/$comres
     else
 		networkstatus="failed"
-        loginfo "Host is not reachable"
+        error "Host is not reachable"
         rm -rf $dirpath$srcip/$comres
 		exit 1
     fi
@@ -616,7 +615,7 @@ migratefrom(){
 	case $opt in
     	"Migrate VMware Workload")
 			printf "\n"
-        	loginfo "Migrate VMware Workload"
+        	loginfo "Migrating VMware Workload"
 	    	loginfo "Please make sure that network communication between VMware and IBM Cloud VPC is enabled" 
 			sed -i '/migratefrom/d' $dirpath$srcip/$tempvarfile
 			echo "migratefrom=vmware" >> $dirpath$srcip/$tempvarfile
@@ -642,7 +641,7 @@ classicimageexport(){
 		imageexportname="$CUSTOM_IMAGE_NAME.vhd"
 		cosobjectname="$CUSTOM_IMAGE_NAME-0.vhd"
 		if ibmcloud cos object-head --bucket $BUCKET --key $cosobjectname > /dev/null 2>&1;then
-			failed "Image Template already exists with same name in COS bucket, Please change custom image name"
+			failed "Image Template already exists with same name in COS bucket. Please change custom image name"
 			exit 1
 		fi
 		sed -i '/imageexportname/d' $dirpath$srcip/$tempvarfile
@@ -652,9 +651,9 @@ classicimageexport(){
 		classicinstanceid=`ibmcloud sl vs list | grep $srcip | awk '{print $1}'`
 		sed -i '/classicinstanceid/d' $dirpath$srcip/$tempvarfile
 		echo "classicinstanceid=$classicinstanceid" >> $dirpath$srcip/$tempvarfile
-		loginfo "Exporting classic VSI into Image Template starting..."
+		loginfo "Starting classic VSI into Image Template export..."
 		if ibmcloud sl vs capture $classicinstanceid --name $CUSTOM_IMAGE_NAME --note $tempalatenote ;then
-			success "Exporting classic VSI into Image Template in started"
+			success "Starting classic VSI into Image Template export"
 			sleep 1m
 			imageid=`ibmcloud sl image list --private --name $CUSTOM_IMAGE_NAME | grep "System" | sort -nr | head -n 1 | awk '{print $1}'`
 			while [[ -z $imageid ]];
@@ -708,12 +707,12 @@ classicimageexport(){
 					fi
 				done
 			else
-				failed "Code: MGNCLIUX21 - Image Template is uploading to COS bucket"
+				failed "Code: MGNCLIUX21 - Error uploading Image Template to COS bucket"
 				exit 1
 			fi
 			source $dirpath$srcip/$tempvarfile
 		else
-			failed "ode: MGNCLIUX21 - Exporting classic VSI into Image Template is failed"
+			failed "Code: MGNCLIUX21 - Exporting classic VSI into Image Template is failed"
 		fi
 	fi
 }
@@ -723,7 +722,7 @@ checkimagefileexistance(){
     count=`ls -1 $dirpath$srcip/*.$imgext 2>/dev/null | wc -l`
     if [[ $count == 1 ]];then
 		if [[ "$imgext" == "vmdk" ]];then
-			failed "Code: MGNCLIUX22 - Required both raw file (eg: vmdisk-flat.vmdk) and descriptor file (eg: vmdisk.vmdk), Please upload both vmdk file"
+			failed "Code: MGNCLIUX22 - Required both raw file (eg: vmdisk-flat.vmdk) and descriptor file (eg: vmdisk.vmdk)."
 			sed -i '/osdiskimage/d' $dirpath$srcip/$tempvarfile
 			echo "osdiskimage=absent" >> $dirpath$srcip/$tempvarfile
 			exit 1
@@ -839,7 +838,7 @@ connectvalidmain(){
 			exit 1
 		fi
 	else
-		loginfo "SSH Key will be generated for this appliance, Please make sure to remove public key from authorized file"
+		loginfo "SSH key will be generated for this appliance. Please make sure to remove public key from authorized file"
     	generatessh
 	fi
     source $dirpath$srcip/$tempvarfile
