@@ -5,7 +5,6 @@ sudo apt-get install qemu-kvm -y
 curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
 ibmcloud plugin install vpc-infrastructure
 ibmcloud plugin install cloud-object-storage
-
 mkdir -p /opt/server-migration/scripts
 cd /opt/server-migration/scripts
 if [[ $? -ne 0 ]]
