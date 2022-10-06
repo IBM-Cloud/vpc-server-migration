@@ -1,4 +1,4 @@
-﻿#----------------------------------------------------------------------------------------------------------------------
+﻿ #----------------------------------------------------------------------------------------------------------------------
 # Script Name :  windows_precheck.ps1   
 # This script will check all pre-requisites for 
 # Virtio Driver, Cloud-Init, Administrator files backup
@@ -19,7 +19,7 @@ function isApplicationPresent( $strApplicationName ) {
 	try {
 		$boolIsPresent = $False;
 		$strApplicationName = Get-CimInstance win32_product | Where-Object { $_.Name -like $strApplicationName } | Select-Object Name;
-		if( $null -ne $strApplicationNamxe ) {
+		if( $null -ne $strApplicationName ) {
 			$boolIsPresent = $True;
 		}
 	} catch {
@@ -81,17 +81,16 @@ function createConfig( $strPath, $strFileContent ) {
 		Write-Host "`nError occurred while creating configuration file : $strPath. $_" -ForegroundColor Red;
 	}
 }
-function installCertificate( $strCertifiateDir ) {
+function extractCertificate( $strCertifiateDir ) {
 	try {
-		$objCertStore = Get-Item "cert:\LocalMachine\TrustedPublisher";
-		$objCertStore.Open( [ System.Security.Cryptography.X509Certificates.OpenFlags ]::ReadWrite );
-	
-		Get-ChildItem -Recurse -Path $strCertifiateDir -Filter "*.cat" | ForEach-Object {
-			$objCertificate = ( Get-AuthenticodeSignature $_.FullName ).SignerCertificate;
-			Write-Host ( "`nInstalled certificate - {0}, {1} from {2}" -f $objCertificate.Thumbprint, $objCertificate.Subject, $_.FullName ) -ForegroundColor Yellow;
-			$objCertStore.Add( $objCertificate );
-		}	
-		$objCertStore.Close();
+        Expand-Archive -F -Path "$strVirtIoCertPath\$strVirtIoCertZip" -DestinationPath "$strVirtIoCertPath"        
+	} catch {
+		Write-Host "`nError occurred while installing certificates. $_" -ForegroundColor Red;
+	}
+}
+function installCertificate( $strCertificateDir ) {
+	try {
+        Import-Certificate -FilePath $strVirtIoCertPath\$strVirtIoCertFile -CertStoreLocation cert:\LocalMachine\TrustedPublisher
 	} catch {
 		Write-Host "`nError occurred while installing certificates. $_" -ForegroundColor Red;
 	}
@@ -217,13 +216,10 @@ function download_file($url, $targetFile)
    return $downloadstatus
 }
 function summary() {
-   
     Write-Host "`n`n ---------------------------------------------------------------------" -ForegroundColor Yellow;
     Write-Host "                                   Summary" -ForegroundColor Yellow;
     Write-Host " ---------------------------------------------------------------------" -ForegroundColor Yellow;
-	
-    Write-Host -ForegroundColor Cyan "Operating System:- " (Get-WmiObject -class Win32_OperatingSystem).Caption
-    $tableTest = $queueTable | Format-Table | Out-String -Stream
+	$tableTest = $queueTable | Format-Table | Out-String -Stream
 	$tableTest[0..2] | Write-Host -ForegroundColor Yellow; Write-Host 
 	for ($i=0; $i -lt $queueTable.Rows.Count; $i++) {
     	if ($queueTable.Rows[$i].Status -eq "Failed") { 
@@ -232,7 +228,6 @@ function summary() {
     	else { $tableTest[$i+3] | Write-Host -ForegroundColor Green -NoNewline; Write-Host 
 		}
 	}
-     Write-Host -ForegroundColor Cyan "Pre-check script has Completed"
 }
 function manualsteps() {
 	Write-Host "Please do Network reset and sysprep, Before running migration script" -ForegroundColor Yellow;
@@ -258,7 +253,8 @@ function main() {
 	Set-Variable -Name "MINIMUM_VERSION_CLOUDBASE_INIT" -Value "1.1.0" -Option Constant;
 	Set-Variable -Name "MINIMUM_VERSION_VIRTIO_DRIVERS" -Value "0.1.185" -Option Constant;
 	Set-Variable -Name "DOWNLOAD_URL_CLOUDBASE_INIT" -Value "https://cloudbase.it/downloads/CloudbaseInitSetup_Stable_x64.msi" -Option Constant;
-	Set-Variable -Name "DOWNLOAD_URL_VIRTIO_DRIVERS" -Value "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso" -Option Constant;
+	Set-Variable -Name "DOWNLOAD_URL_VIRTIO_DRIVERS" -Value "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.190-1/virtio-win.iso" -Option Constant;
+    Set-Variable -Name "DOWNLOAD_VIRTIO_CERT" -value "https://github.com/IBM-Cloud/vpc-server-migration/raw/main/server-migration-scripts/virtio_cert/virtcer.zip?raw=true" -Option Constant
 	Set-Variable -Name "DIR_TEMP" -Value 'C:\temp' -Option Constant;
 	Set-Variable -Name "ADMIN_USER_PATH" -Value "C:\Users\Administrator\" -Option Constant;
     Set-Variable -Name "ADMIN_USER_BACKUP_PATH" -Value "C:\backup\" -Option Constant;
@@ -269,10 +265,15 @@ function main() {
     $queueTable.Columns.Add("Status",[string]) | Out-Null
 
     checkAndCreateDir -strPath $DIR_TEMP;
-	$strCloudbaseInitMsiFileName = 'CloudbaseInitSetup_Stable_x64.msi';
+    checkAndCreateDir -strPath $DIR_TEMP\cert;
+    
+    $strCloudbaseInitMsiFileName = 'CloudbaseInitSetup_Stable_x64.msi';
 	$strVirtIoIsoFileName = 'virtio-win.iso';
 	$strCloudbaseInitPath = "$DIR_TEMP\$strCloudbaseInitMsiFileName";
 	$strVirtIoIsoPath = "$DIR_TEMP\$strVirtIoIsoFileName";
+	$strVirtIoCertPath = "$DIR_TEMP\cert";
+    $strVirtIoCertZip = 'virtcer.zip';
+    $strVirtIoCertFile = 'virtiocert.cer';
     $strVirtIoInstalledPath = "C:\Program Files\Virtio-Win";
     $strCloudbaseInitInstalledPath = "C:\Program Files\Cloudbase Solutions";
 	$boolIsAllowedVersion = $False;
@@ -336,7 +337,24 @@ function main() {
                     Write-Host "`nDownload failed, Please download virtio driver manually from $DOWNLOAD_URL_VIRTIO_DRIVERS or try running scirpt after sometime later" -ForegroundColor Red;
                     $queueTable.Rows.Add("Virtio Driver Download","Failed") | Out-Null                    
             }
-        }        
+        }
+        
+         if( Test-Path  $strVirtIoCertPath ) {
+            Write-Output "Downloading Cert for Virtio Driver"
+            $downloadstatus = Invoke-WebRequest $DOWNLOAD_VIRTIO_CERT -OutFile "$strVirtIoCertPath\$strVirtIoCertZip"
+            $trycount = 0
+            while (($downloadstatus -eq $False) -and ($trycount -ne 5 )) {
+                Write-Output "Trying to download again..."
+                $downloadstatus = Invoke-WebRequest $DOWNLOAD_VIRTIO_CERT -OutFile "$strVirtIoCertPath\$strVirtIoCertZip"
+                $trycount =    $trycount + 1
+                Start-Sleep -s 10
+            }
+            if ($downloadstatus -eq $False) {
+                    Write-Host "`nDownload failed, Try to import the certificate manually from  $DOWNLOAD_VIRTIO_CERT or try running scirpt after sometime later" -ForegroundColor Red;
+                    $queueTable.Rows.Add("Installing Cert for VirtIo","Failed") | Out-Null                    
+            }
+        } 
+                
 		if( Test-Path $strVirtIoIsoPath ) {
             $strDriveLetter = (Get-DiskImage $strVirtIoIsoPath | Get-Volume).DriveLetter
             if ( -not ($null -eq $strDriveLetter)){                               
@@ -349,7 +367,8 @@ function main() {
             if (Test-Path $strVirtIoPath ){
 			$strDriveLetter = "{0}:" -f $strDriveLetter; 
 			$strCertificatePath = getCertificatePath -strDriveLetter $strDriveLetter;
-			installCertificate -strCertifiateDir $strCertificatePath;
+            extractCertificate -strCertifiateDir $strCertificatePath;
+			installCertificate -strCertificateDir $strCertificatePath;
 			$virtioInstallStatus = installSoftware -strSourcePath $strVirtIoPath -strInstalledPath $strVirtIoInstalledPath;
             }
             else{$virtioInstallStatus = "Failed"}
@@ -544,4 +563,4 @@ plugins=cloudbaseinit.plugins.common.mtu.MTUPlugin,
 # Script execution will start from here.
 # Clear-host;
 $ErrorActionPreference = 'Stop'; 
-main;     
+main;
