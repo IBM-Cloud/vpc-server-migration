@@ -1,4 +1,5 @@
 #!/bin/bash
+
 mkdir -p /opt/server-migration/scripts
 cd /opt/server-migration/scripts
 if [[ $? -ne 0 ]]
@@ -20,4 +21,9 @@ for f in appliance.sh config cronjobscheduler.sh ibmcloudloginstatus.sh linux_pr
  done
 echo "Updating /opt/server-migration/scripts permission" >>/var/log/download_script.log
 chmod +x *
-
+curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
+ibmcloud plugin install vpc-infrastructure
+ibmcloud plugin install cloud-object-storage
+sudo apt-get update -y 
+sudo apt-get install nmap -y 
+sudo apt-get install qemu-kvm -y
