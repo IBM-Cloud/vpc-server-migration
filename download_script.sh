@@ -2,6 +2,7 @@
 sudo apt-get update -y 
 sudo apt-get install nmap -y 
 sudo apt-get install qemu-kvm -y 
+
 curl -fsSL https://clis.cloud.ibm.com/install/linux | sh
 ibmcloud plugin install vpc-infrastructure
 ibmcloud plugin install cloud-object-storage
