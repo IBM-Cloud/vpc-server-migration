@@ -7,7 +7,7 @@
 function isValidOs() {
 	try {
 		$boolIsValid = $False;
-		$arrstrAllowedOSes = @( 'Microsoft Windows Server 2019 Standard', 'Microsoft Windows Server 2016 Standard','Microsoft Windows Server 2012 R2 Standard','Microsoft Windows Server 2012 Standard');
+		$arrstrAllowedOSes = @( 'Microsoft Windows Server 2019 Standard', 'Microsoft Windows Server 2016 Standard','Microsoft Windows Server 2012 R2 Standard','Microsoft Windows Server 2012 Standard','Microsoft Windows Server 2022 Standard');
 		$strOsName = ( Get-WmiObject -Class win32_operatingsystem ).caption;
 		$arrstrAllowedOSes | ForEach-Object { if ( $strOsName.toLower().Contains( $_.toLower() ) ) { $boolIsValid = $True; } };		
 	} catch {
