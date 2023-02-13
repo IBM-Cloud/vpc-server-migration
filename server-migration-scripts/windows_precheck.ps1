@@ -261,6 +261,7 @@ function main() {
     Set-Variable -Name "ADMIN_USER_BACKUP_PATH" -Value "C:\backup\" -Option Constant;
 
 	#Downloading Virtio Driver based on OS Version
+	$strOsName = ( Get-WmiObject -Class win32_operatingsystem ).caption;
 	if ($strOsName -match "Microsoft Windows Server 2022") { 
 		Set-Variable -Name "DOWNLOAD_URL_VIRTIO_DRIVERS" -Value "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.229-1/virtio-win.iso" -Option Constant;
 	}
