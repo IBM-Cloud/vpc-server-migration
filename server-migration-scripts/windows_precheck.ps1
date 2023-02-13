@@ -572,4 +572,4 @@ plugins=cloudbaseinit.plugins.common.mtu.MTUPlugin,
 # Script execution will start from here.
 # Clear-host;
 $ErrorActionPreference = 'Stop'; 
-main; 
+main;
