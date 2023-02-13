@@ -261,11 +261,11 @@ function main() {
     Set-Variable -Name "ADMIN_USER_BACKUP_PATH" -Value "C:\backup\" -Option Constant;
 
 	#Downloading Virtio Driver based on OS Version
-	if ($strOsName -ne "Microsoft Windows Server 2022 Standard") { 
-		Set-Variable -Name "DOWNLOAD_URL_VIRTIO_DRIVERS" -Value "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.190-1/virtio-win.iso" -Option Constant;
+	if ($strOsName -match "Microsoft Windows Server 2022") { 
+		Set-Variable -Name "DOWNLOAD_URL_VIRTIO_DRIVERS" -Value "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.229-1/virtio-win.iso" -Option Constant;
 	}
 	else { 
-		Set-Variable -Name "DOWNLOAD_URL_VIRTIO_DRIVERS" -Value "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.229-1/virtio-win.iso" -Option Constant;
+		Set-Variable -Name "DOWNLOAD_URL_VIRTIO_DRIVERS" -Value "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.190-1/virtio-win.iso" -Option Constant;
 	} 
 	    
     # Creating the table for summary
