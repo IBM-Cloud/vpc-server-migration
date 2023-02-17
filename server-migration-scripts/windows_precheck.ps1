@@ -255,12 +255,20 @@ function main() {
 	Set-Variable -Name "MINIMUM_VERSION_CLOUDBASE_INIT" -Value "1.1.0" -Option Constant;
 	Set-Variable -Name "MINIMUM_VERSION_VIRTIO_DRIVERS" -Value "0.1.185" -Option Constant;
 	Set-Variable -Name "DOWNLOAD_URL_CLOUDBASE_INIT" -Value "https://cloudbase.it/downloads/CloudbaseInitSetup_Stable_x64.msi" -Option Constant;
-	Set-Variable -Name "DOWNLOAD_URL_VIRTIO_DRIVERS" -Value "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.190-1/virtio-win.iso" -Option Constant;
-    Set-Variable -Name "DOWNLOAD_VIRTIO_CERT" -value "https://github.com/IBM-Cloud/vpc-server-migration/raw/main/server-migration-scripts/virtio_cert/virtcer.zip?raw=true" -Option Constant
+	Set-Variable -Name "DOWNLOAD_VIRTIO_CERT" -value "https://github.com/IBM-Cloud/vpc-server-migration/raw/main/server-migration-scripts/virtio_cert/virtcer.zip?raw=true" -Option Constant
 	Set-Variable -Name "DIR_TEMP" -Value 'C:\temp' -Option Constant;
 	Set-Variable -Name "ADMIN_USER_PATH" -Value "C:\Users\Administrator\" -Option Constant;
     Set-Variable -Name "ADMIN_USER_BACKUP_PATH" -Value "C:\backup\" -Option Constant;
-    
+
+	#Downloading Virtio Driver based on OS Version
+	$strOsName = ( Get-WmiObject -Class win32_operatingsystem ).caption;
+	if ($strOsName -match "Microsoft Windows Server 2022") { 
+		Set-Variable -Name "DOWNLOAD_URL_VIRTIO_DRIVERS" -Value "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.229-1/virtio-win.iso" -Option Constant;
+	}
+	else { 
+		Set-Variable -Name "DOWNLOAD_URL_VIRTIO_DRIVERS" -Value "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.190-1/virtio-win.iso" -Option Constant;
+	} 
+	    
     # Creating the table for summary
     $queueTable = New-Object System.Data.DataTable
     $queueTable.Columns.Add("Check",[string]) | Out-Null
